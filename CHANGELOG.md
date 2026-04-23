@@ -6,6 +6,7 @@
 
 - [#1023](https://github.com/estruyf/vscode-front-matter/issues/1023): Fix validation errors for image, file, and keywords fields
 - [#1024](https://github.com/estruyf/vscode-front-matter/issues/1024): Re-add the `frontMatter.copilot.enabled` setting to allow users to disable the GitHub Copilot integration
+- Fix Git detection when Git is configured via VS Code `git.path` and not installed globally on the system
 
 ## [10.10.0] - 2026-04-03 - [Release notes](https://beta.frontmatter.codes/updates/v10.10.0)
 

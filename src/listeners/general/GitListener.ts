@@ -26,7 +26,7 @@ import {
 import { GeneralCommands } from './../../constants/GeneralCommands';
 import simpleGit, { SimpleGit } from 'simple-git';
 import { Folders } from '../../commands/Folders';
-import { Event, commands, extensions } from 'vscode';
+import { Event, commands, extensions, workspace } from 'vscode';
 import { GitAPIState, GitRepository, PostMessageData } from '../../models';
 import * as l10n from '@vscode/l10n';
 import { LocalizationKey } from '../../localization';
@@ -343,7 +343,7 @@ export class GitListener {
 
     const options = {
       baseDir: submoduleFolder || wsFolder?.fsPath || '',
-      binary: 'git',
+      binary: GitListener.getGitBinary(),
       maxConcurrentProcesses: 6
     };
 
@@ -354,6 +354,27 @@ export class GitListener {
       this.client = simpleGit(options);
       return this.client;
     }
+  }
+
+  /**
+   * Resolves the Git binary path from VS Code settings.
+   * Falls back to the default `git` command when no custom path is configured.
+   */
+  private static getGitBinary(): string {
+    const gitPath = workspace.getConfiguration('git').get<string | string[]>('path');
+
+    if (Array.isArray(gitPath)) {
+      const firstValidPath = gitPath.find((path) => typeof path === 'string' && path.trim());
+      if (firstValidPath) {
+        return firstValidPath;
+      }
+    }
+
+    if (typeof gitPath === 'string' && gitPath.trim()) {
+      return gitPath;
+    }
+
+    return 'git';
   }
 
   /**
