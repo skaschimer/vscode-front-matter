@@ -6,7 +6,7 @@ src/**
 vsc-extension-quickstart.md
 **/tsconfig.json
 **/tsconfig.e2e.json
-**/*.map
+
 **/*.ts
 webpack.config.js
 node_modules
@@ -30,3 +30,6 @@ README.beta.md
 e2e
 storage
 pnpm-lock.yaml
+.env
+tailwind.panel.js
+LOCALIZATION.md

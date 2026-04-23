@@ -3,7 +3,7 @@
   "displayName": "Front Matter CMS",
   "description": "Front Matter is a CMS that runs within Visual Studio Code. It gives you the power and control of a full-blown CMS while also providing you the flexibility and speed of the static site generator of your choice like: Hugo, Jekyll, Docusaurus, NextJs, Gatsby, and many more...",
   "icon": "assets/frontmatter-teal-128x128.png",
-  "version": "10.10.0",
+  "version": "10.10.1",
   "preview": false,
   "publisher": "eliostruyf",
   "galleryBanner": {
@@ -2128,6 +2128,11 @@
           "type": "string",
           "default": "gpt-4o-mini",
           "markdownDescription": "%setting.frontMatter.copilot.family.markdownDescription%"
+        },
+        "frontMatter.copilot.enabled": {
+          "type": "boolean",
+          "default": true,
+          "markdownDescription": "%setting.frontMatter.copilot.enabled.markdownDescription%"
         }
       }
     },
