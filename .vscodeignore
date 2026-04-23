@@ -31,3 +31,4 @@ e2e
 storage
 pnpm-lock.yaml
 .env
+tailwind.panel.js
