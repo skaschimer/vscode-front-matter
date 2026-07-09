@@ -580,15 +580,39 @@ export class DataListener extends BaseListener {
       const threshold = Settings.get<number>(SETTING_CONTENT_HEALTH_FRESHNESS_THRESHOLD) ?? 180;
       let freshnessWarning: { daysSince: number; threshold: number } | null = null;
       if (threshold > 0) {
-        const dateValue = (metadata?.date || metadata?.publishDate) as string | undefined;
-        if (dateValue) {
-          const dateFormat = Settings.get<string>(SETTING_DATE_FORMAT);
-          const parsed = DateHelper.tryParse(dateValue, dateFormat || undefined);
+        const article = { content: '', data: metadata, path: filePath } as ParsedFrontMatter;
+        const contentType = await ArticleHelper.getContentType(article);
+        const modifiedDateField = contentType.fields.find((field) => field.isModifiedDate);
+        const publishDateField = contentType.fields.find((field) => field.isPublishDate);
+        const defaultDateFormat = Settings.get<string>(SETTING_DATE_FORMAT) || undefined;
+
+        const dateCandidates: { value: unknown; dateFormat?: string }[] = [
+          {
+            value: modifiedDateField?.name ? metadata?.[modifiedDateField.name] : undefined,
+            dateFormat: modifiedDateField?.dateFormat || defaultDateFormat
+          },
+          {
+            value: publishDateField?.name ? metadata?.[publishDateField.name] : undefined,
+            dateFormat: publishDateField?.dateFormat || defaultDateFormat
+          },
+          {
+            value: metadata?.date,
+            dateFormat: defaultDateFormat
+          },
+          {
+            value: metadata?.publishDate,
+            dateFormat: defaultDateFormat
+          }
+        ];
+
+        for (const candidate of dateCandidates) {
+          const parsed = DateHelper.tryParse(candidate.value, candidate.dateFormat);
           if (parsed && DateHelper.isValid(parsed)) {
             const daysSince = Math.floor((Date.now() - parsed.getTime()) / (1000 * 60 * 60 * 24));
             if (daysSince > threshold) {
               freshnessWarning = { daysSince, threshold };
             }
+            break;
           }
         }
       }
