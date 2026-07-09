@@ -580,7 +580,11 @@ export class DataListener extends BaseListener {
       const threshold = Settings.get<number>(SETTING_CONTENT_HEALTH_FRESHNESS_THRESHOLD) ?? 180;
       let freshnessWarning: { daysSince: number; threshold: number } | null = null;
       if (threshold > 0) {
-        const article = { content: '', data: metadata, path: filePath } as ParsedFrontMatter;
+        const article = {
+          content: articleDetails.content || '',
+          data: metadata,
+          path: filePath
+        } as ParsedFrontMatter;
         const contentType = await ArticleHelper.getContentType(article);
         const modifiedDateField = contentType.fields.find((field) => field.isModifiedDate);
         const publishDateField = contentType.fields.find((field) => field.isPublishDate);
