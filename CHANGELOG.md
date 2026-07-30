@@ -18,6 +18,7 @@
 - [#920](https://github.com/estruyf/vscode-front-matter/issues/920): Fix `metadata.fmRelFilePath` returning an absolute path on Windows by normalizing the workspace folder path before stripping it
 - [#963](https://github.com/estruyf/vscode-front-matter/issues/963): Prevent infinite update loops for fields when using Hugo partials as values in the front matter
 - [#1041](https://github.com/estruyf/vscode-front-matter/issues/1041): Fix in image page when using page bundles
+- [#1054](https://github.com/estruyf/vscode-front-matter/issues/1054): Fix the "Could not retrieve the locale for the current file" error for multilingual content nested in subfolders (ex. `content/de/posts/2024/07/my-post/index.md`). Translations are now created with the same folder structure as the source file
 
 ## [10.10.1] - 2026-04-23
 

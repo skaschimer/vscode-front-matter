@@ -133,21 +133,14 @@ export class i18n {
       return false;
     }
 
-    const fileInfo = await i18n.getFileInfo(filePath);
-
     if (pageFolder.path) {
       if (pageFolder.locale) {
         return pageFolder.locale === pageFolder.defaultLocale;
       }
 
-      let pageFolderPath = parseWinPath(pageFolder.path);
-      if (!pageFolderPath.endsWith('/')) {
-        pageFolderPath += '/';
-      }
-
-      return (
-        parseWinPath(fileInfo.dir).toLowerCase() === parseWinPath(pageFolderPath).toLowerCase()
-      );
+      // The content can be nested within the locale folder, that is why it only checks
+      // if the file is located in the folder instead of comparing the directories.
+      return typeof i18n.getRelativeFilePath(filePath, pageFolder.path) !== 'undefined';
     }
 
     return false;
@@ -166,20 +159,11 @@ export class i18n {
 
     let pageFolder = await Folders.getPageFolderByFilePath(filePath);
 
-    const fileInfo = await i18n.getFileInfo(filePath);
-
-    if (pageFolder && pageFolder.defaultLocale) {
-      let pageFolderPath = parseWinPath(pageFolder.path);
-      if (!pageFolderPath.endsWith('/')) {
-        pageFolderPath += '/';
-      }
-
-      if (
-        pageFolder.path &&
-        pageFolder.locale &&
-        parseWinPath(fileInfo.dir).toLowerCase() === parseWinPath(pageFolderPath).toLowerCase()
-      ) {
-        return i18nSettings.find((i18n) => i18n.locale === pageFolder?.locale);
+    if (pageFolder && pageFolder.defaultLocale && pageFolder.path && pageFolder.locale) {
+      // The content can be nested within the locale folder (ex. `content/de/posts/2024/07/my-post/index.md`),
+      // that is why it only checks if the file is located in the locale folder.
+      if (typeof i18n.getRelativeFilePath(filePath, pageFolder.path) !== 'undefined') {
+        return i18nSettings.find((setting) => setting.locale === pageFolder?.locale);
       }
     }
 
@@ -188,12 +172,16 @@ export class i18n {
       return;
     }
 
-    for (const locale of i18nSettings) {
-      if (locale.path && pageFolder.defaultLocale !== locale.locale) {
-        const translation = join(pageFolder.path, locale.path, fileInfo.filename);
-        if (parseWinPath(translation).toLowerCase() === parseWinPath(filePath).toLowerCase()) {
-          return locale;
-        }
+    // Check in which locale folder the file is located
+    const sourcePath = pageFolder.localeSourcePath || pageFolder.path;
+    const locales = i18nSettings
+      .filter((setting) => setting.path && pageFolder?.defaultLocale !== setting.locale)
+      .sort((a, b) => (b.path as string).length - (a.path as string).length);
+
+    for (const locale of locales) {
+      const localePath = join(sourcePath, locale.path as string);
+      if (typeof i18n.getRelativeFilePath(filePath, localePath) !== 'undefined') {
+        return locale;
       }
     }
 
@@ -227,14 +215,15 @@ export class i18n {
     } = {};
 
     let pageFolder = await Folders.getPageFolderByFilePath(filePath);
-    const fileInfo = await i18n.getFileInfo(filePath);
 
     if (pageFolder && pageFolder.defaultLocale && pageFolder.localeSourcePath) {
-      for (const i18n of i18nSettings) {
-        const translation = join(pageFolder.localeSourcePath, i18n.path || '', fileInfo.filename);
+      const relFilePath = await i18n.getLocaleRelativeFilePath(filePath, pageFolder);
+
+      for (const setting of i18nSettings) {
+        const translation = join(pageFolder.localeSourcePath, setting.path || '', relFilePath);
         if (await existsAsync(translation)) {
-          translations[i18n.locale] = {
-            locale: i18n,
+          translations[setting.locale] = {
+            locale: setting,
             path: translation
           };
         }
@@ -247,11 +236,14 @@ export class i18n {
       return translations;
     }
 
-    for (const i18n of i18nSettings) {
-      const translation = join(pageFolder.path, i18n.path || '', fileInfo.filename);
+    const relFilePath = await i18n.getLocaleRelativeFilePath(filePath, pageFolder);
+    const sourcePath = pageFolder.localeSourcePath || pageFolder.path;
+
+    for (const setting of i18nSettings) {
+      const translation = join(sourcePath, setting.path || '', relFilePath);
       if (await existsAsync(translation)) {
-        translations[i18n.locale] = {
-          locale: i18n,
+        translations[setting.locale] = {
+          locale: setting,
           path: translation
         };
       }
@@ -346,18 +338,11 @@ export class i18n {
       return;
     }
 
-    // Get the directory of the file
+    // Get the directory of the file relative to its locale folder
     const fileInfo = parse(fileUri.fsPath);
-    let dir = fileInfo.dir;
-    let pageBundleDir = '';
+    const contentDir = await i18n.getLocaleRelativeDir(fileUri.fsPath, pageFolder);
 
-    if (await ArticleHelper.isPageBundle(fileUri.fsPath)) {
-      dir = ArticleHelper.getPageFolderFromBundlePath(fileUri.fsPath);
-      pageBundleDir = fileUri.fsPath.replace(dir, '');
-      pageBundleDir = join(parse(pageBundleDir).dir);
-    }
-
-    const i18nDir = join(pageFolder.localeSourcePath, targetLocale.path, pageBundleDir);
+    const i18nDir = join(pageFolder.localeSourcePath, targetLocale.path, contentDir);
 
     if (!(await existsAsync(i18nDir))) {
       await workspace.fs.createDirectory(Uri.file(i18nDir));
@@ -452,12 +437,7 @@ export class i18n {
 
     // Determine translation file paths
     const fileInfo = parse(fileUri.fsPath);
-    let pageBundleDir = '';
-    if (await ArticleHelper.isPageBundle(fileUri.fsPath)) {
-      const dir = ArticleHelper.getPageFolderFromBundlePath(fileUri.fsPath);
-      pageBundleDir = fileUri.fsPath.replace(dir, '');
-      pageBundleDir = join(parse(pageBundleDir).dir);
-    }
+    const contentDir = await i18n.getLocaleRelativeDir(fileUri.fsPath, pageFolder);
 
     // Gather target locales & metadata
     const translations = (await i18n.getTranslations(fileUri.fsPath)) || {};
@@ -468,14 +448,9 @@ export class i18n {
       .map((i18n) => {
         return {
           ...i18n,
-          dir: join(pageFolder.localeSourcePath!, i18n.path!, pageBundleDir),
-          absolutePath: join(
-            pageFolder.localeSourcePath!,
-            i18n.path!,
-            pageBundleDir,
-            fileInfo.base
-          ),
-          relativePath: join(i18n.path!, pageBundleDir, fileInfo.base)
+          dir: join(pageFolder.localeSourcePath!, i18n.path!, contentDir),
+          absolutePath: join(pageFolder.localeSourcePath!, i18n.path!, contentDir, fileInfo.base),
+          relativePath: join(i18n.path!, contentDir, fileInfo.base)
         };
       })
       .sort((a, b) => (a.title || a.locale).localeCompare(b.title || b.locale));
@@ -669,6 +644,71 @@ export class i18n {
   }
 
   /**
+   * Retrieves the path of the file relative to the given folder.
+   *
+   * @param filePath - The path of the file.
+   * @param folderPath - The path of the folder.
+   * @returns The relative path of the file, or `undefined` when the file is not located in the folder.
+   */
+  private static getRelativeFilePath(filePath: string, folderPath?: string): string | undefined {
+    if (!filePath || !folderPath) {
+      return;
+    }
+
+    let parsedFolderPath = parseWinPath(folderPath);
+    if (!parsedFolderPath.endsWith('/')) {
+      parsedFolderPath += '/';
+    }
+
+    const parsedFilePath = parseWinPath(filePath);
+    if (!parsedFilePath.toLowerCase().startsWith(parsedFolderPath.toLowerCase())) {
+      return;
+    }
+
+    return parsedFilePath.substring(parsedFolderPath.length);
+  }
+
+  /**
+   * Retrieves the path of the file relative to its locale folder.
+   *
+   * The content can be nested within the locale folder, the whole folder structure is kept
+   * (ex. `posts/2024/07/my-post/index.md`) so that translations use the same structure.
+   *
+   * @param filePath - The path of the file.
+   * @param pageFolder - The content folder of the file.
+   * @returns The relative path of the file.
+   */
+  private static async getLocaleRelativeFilePath(
+    filePath: string,
+    pageFolder: ContentFolder
+  ): Promise<string> {
+    const relFilePath = i18n.getRelativeFilePath(filePath, pageFolder.path);
+    if (typeof relFilePath !== 'undefined') {
+      return relFilePath;
+    }
+
+    const fileInfo = await i18n.getFileInfo(filePath);
+    return fileInfo.filename;
+  }
+
+  /**
+   * Retrieves the directory of the file relative to its locale folder.
+   *
+   * @param filePath - The path of the file.
+   * @param pageFolder - The content folder of the file.
+   * @returns The relative directory of the file, or an empty string when the file is located in the root of the locale folder.
+   */
+  private static async getLocaleRelativeDir(
+    filePath: string,
+    pageFolder: ContentFolder
+  ): Promise<string> {
+    const relFilePath = await i18n.getLocaleRelativeFilePath(filePath, pageFolder);
+    const relDir = parse(relFilePath).dir;
+
+    return relDir ? join(relDir) : '';
+  }
+
+  /**
    * Retrieves the page folder for a given file path.
    *
    * @param filePath - The path of the file.
@@ -680,6 +720,16 @@ export class i18n {
     const localeFolders = folders?.filter((folder) => folder.defaultLocale);
     if (!localeFolders) {
       return;
+    }
+
+    // Check in which locale folder the file is located, the deepest folder wins
+    const sortedFolders = [...localeFolders].sort(
+      (a, b) => (b.path || '').length - (a.path || '').length
+    );
+    for (const folder of sortedFolders) {
+      if (typeof i18n.getRelativeFilePath(filePath, folder.path) !== 'undefined') {
+        return folder;
+      }
     }
 
     const fileInfo = await i18n.getFileInfo(filePath);
