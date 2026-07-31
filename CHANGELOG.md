@@ -4,6 +4,7 @@
 
 ### 🎨 Enhancements
 
+- [#1055](https://github.com/estruyf/vscode-front-matter/issues/1055): Added the `translate` property on content type fields to define which front matter fields need to be machine translated. The title and description fields are translated by default, set `translate: false` to exclude them
 
 ### 🐞 Fixes
 

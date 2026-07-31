@@ -235,6 +235,7 @@
   "setting.frontMatter.taxonomy.contentTypes.items.properties.fields.items.properties.dataFileAdditionalFields.description": "Specify additional field names from the data record to include when storing the value. When set, the frontmatter value will be an object containing the dataFileKey field plus these additional fields.",
   "setting.frontMatter.taxonomy.contentTypes.items.properties.fields.items.properties.editable.description": "Specify if the field is editable",
   "setting.frontMatter.taxonomy.contentTypes.items.properties.fields.items.properties.encodeEmoji.description": "Specify if the field should encode emoji",
+  "setting.frontMatter.taxonomy.contentTypes.items.properties.fields.items.properties.translate.description": "Specify if the field value should be machine translated when creating a translation of the content. The title and description fields are translated by default, set it to `false` to exclude them.",
   "setting.frontMatter.taxonomy.contentTypes.items.properties.fields.items.properties.dateFormat.description": "Specify the date format to use",
   "setting.frontMatter.taxonomy.contentTypes.items.properties.fields.items.properties.required.description": "Specify if the field is required",
   "setting.frontMatter.taxonomy.contentTypes.items.properties.fields.items.properties.contentTypeName.description": "Specify the content type name to filter content for the contentRelationship field",

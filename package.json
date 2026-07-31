@@ -1600,6 +1600,10 @@
                       "default": false,
                       "description": "%setting.frontMatter.taxonomy.contentTypes.items.properties.fields.items.properties.encodeEmoji.description%"
                     },
+                    "translate": {
+                      "type": "boolean",
+                      "description": "%setting.frontMatter.taxonomy.contentTypes.items.properties.fields.items.properties.translate.description%"
+                    },
                     "dateFormat": {
                       "type": "string",
                       "default": "",

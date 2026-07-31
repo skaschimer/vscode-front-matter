@@ -119,6 +119,7 @@ export interface Field {
   editable?: boolean;
   required?: boolean;
   encodeEmoji?: boolean;
+  translate?: boolean;
 
   // Date fields
   isPublishDate?: boolean;
