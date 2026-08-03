@@ -32,6 +32,7 @@ import { MediaInfo } from '../../../models';
 import * as l10n from '@vscode/l10n';
 import { LocalizationKey } from '../../../localization';
 import { MediaItemPanel } from './MediaItemPanel';
+import { MediaPastePanel } from './MediaPastePanel';
 import { FilesProvider } from '../../providers/FilesProvider';
 import { SortOption } from '../../constants/SortOption';
 import { Pagination } from '../Header/Pagination';
@@ -183,6 +184,8 @@ export const Media: React.FunctionComponent<IMediaProps> = () => {
     <FilesProvider files={allMedia}>
       <PageLayout>
         <div className="w-full h-full pb-6" {...getRootProps()}>
+          <MediaPastePanel />
+
           {viewData?.data?.filePath && (
             <div className={`text-lg text-center mb-6`}>
               <p>{l10n.t(LocalizationKey.dashboardMediaMediaDescription)}</p>

@@ -2,6 +2,7 @@ import { GitListener } from './listeners/general/GitListener';
 import * as vscode from 'vscode';
 import { COMMAND_NAME, CONTEXT, EXTENSION_NAME } from './constants';
 import { MarkdownFoldingProvider } from './providers/MarkdownFoldingProvider';
+import { MediaPasteProvider } from './providers/MediaPasteProvider';
 import { PanelProvider } from './panelWebView/PanelProvider';
 import {
   DashboardSettings,
@@ -115,6 +116,9 @@ export async function activate(context: vscode.ExtensionContext) {
 
   // Folding the front matter of markdown files
   MarkdownFoldingProvider.register();
+
+  // Pasting media into the content files
+  MediaPasteProvider.register(subscriptions);
 
   // Register the taxonomy commands
   Taxonomy.registerCommands(subscriptions);

@@ -24,9 +24,21 @@ export interface ViewData {
   multiple?: string[];
   value?: string;
 
+  // Media paste fields
+  suggestedFolder?: string;
+  pendingUpload?: PendingUpload;
+
   // File fields
   type: 'file' | 'media';
   fileExtensions?: string[];
+}
+
+export interface PendingUpload {
+  fileName: string;
+  /**
+   * The base64 encoded contents of the file
+   */
+  contents: string;
 }
 
 export interface SnippetRange {

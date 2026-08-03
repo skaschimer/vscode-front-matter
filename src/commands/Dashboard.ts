@@ -302,7 +302,7 @@ export class Dashboard {
       `default-src 'none';`,
       `img-src ${`vscode-file://vscode-app`} ${
         webView.cspSource
-      } https://api.visitorbadge.io 'self' 'unsafe-inline' https://*`,
+      } https://api.visitorbadge.io 'self' 'unsafe-inline' https://* data:`,
       `media-src ${`vscode-file://vscode-app`} ${
         webView.cspSource
       } 'self' 'unsafe-inline' https://*`,

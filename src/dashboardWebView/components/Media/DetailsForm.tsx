@@ -15,6 +15,14 @@ export interface IDetailsFormProps {
   isImageFile: boolean;
   isVideoFile: boolean;
   onDismiss: () => void;
+  /**
+   * Label for the submit button, defaults to the common save label
+   */
+  submitLabel?: string;
+  /**
+   * Called with the submitted metadata once it has been stored
+   */
+  onSubmitted?: (metadata: { [fieldName: string]: string }) => void;
 }
 
 export const DetailsForm: React.FunctionComponent<IDetailsFormProps> = ({
@@ -22,6 +30,8 @@ export const DetailsForm: React.FunctionComponent<IDetailsFormProps> = ({
   isImageFile,
   isVideoFile,
   onDismiss,
+  submitLabel,
+  onSubmitted,
 }: React.PropsWithChildren<IDetailsFormProps>) => {
   const settings = useRecoilValue(SettingsAtom);
   const selectedFolder = useRecoilValue(SelectedMediaFolderSelector);
@@ -71,8 +81,14 @@ export const DetailsForm: React.FunctionComponent<IDetailsFormProps> = ({
       metadata,
     });
 
+    // When a submit handler is provided, it takes over from here
+    if (onSubmitted) {
+      onSubmitted(metadata);
+      return;
+    }
+
     onDismiss();
-  }, [media, filename, metadata, selectedFolder, page, onDismiss]);
+  }, [media, filename, metadata, selectedFolder, page, onDismiss, onSubmitted]);
 
   const formFields = useMemo(() => {
     return fields.map((field) => {
@@ -212,7 +228,7 @@ export const DetailsForm: React.FunctionComponent<IDetailsFormProps> = ({
           onClick={onSubmitMetadata}
           disabled={!filename}
         >
-          {l10n.t(LocalizationKey.commonSave)}
+          {submitLabel || l10n.t(LocalizationKey.commonSave)}
         </button>
         <button
           type="button"

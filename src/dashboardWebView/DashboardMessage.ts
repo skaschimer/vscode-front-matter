@@ -40,6 +40,7 @@ export enum DashboardMessage {
   copyToClipboard = 'copyToClipboard',
   refreshMedia = 'refreshMedia',
   uploadMedia = 'uploadMedia',
+  uploadPastedMedia = 'uploadPastedMedia',
   deleteMedia = 'deleteMedia',
   revealMedia = 'revealMedia',
   insertMedia = 'insertMedia',

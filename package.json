@@ -27,7 +27,7 @@
   },
   "qna": "https://github.com/estruyf/vscode-front-matter/discussions",
   "engines": {
-    "vscode": "^1.90.0"
+    "vscode": "^1.97.0"
   },
   "l10n": "./l10n",
   "categories": [
@@ -1234,6 +1234,33 @@
           "items": {
             "type": "string"
           },
+          "scope": "Media"
+        },
+        "frontMatter.media.pasteBehavior": {
+          "type": "string",
+          "default": "dashboard",
+          "enum": [
+            "dashboard",
+            "auto",
+            "disabled"
+          ],
+          "enumDescriptions": [
+            "%setting.frontMatter.media.pasteBehavior.dashboard.description%",
+            "%setting.frontMatter.media.pasteBehavior.auto.description%",
+            "%setting.frontMatter.media.pasteBehavior.disabled.description%"
+          ],
+          "markdownDescription": "%setting.frontMatter.media.pasteBehavior.markdownDescription%",
+          "scope": "Media"
+        },
+        "frontMatter.media.pasteFolder": {
+          "type": "string",
+          "markdownDescription": "%setting.frontMatter.media.pasteFolder.markdownDescription%",
+          "scope": "Media"
+        },
+        "frontMatter.media.pasteFileName": {
+          "type": "string",
+          "default": "image-{date}-{time}",
+          "markdownDescription": "%setting.frontMatter.media.pasteFileName.markdownDescription%",
           "scope": "Media"
         },
         "frontMatter.panel.openOnSupportedFile": {
@@ -2969,7 +2996,7 @@
     "@types/react": "17.0.0",
     "@types/react-datepicker": "^4.8.0",
     "@types/react-dom": "17.0.0",
-    "@types/vscode": "^1.90.0",
+    "@types/vscode": "^1.125.0",
     "@types/webpack-bundle-analyzer": "^4.7.0",
     "@typescript-eslint/eslint-plugin": "^5.50.0",
     "@typescript-eslint/parser": "^5.50.0",
