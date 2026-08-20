@@ -2537,6 +2537,14 @@ export enum LocalizationKey {
    */
   helpersMediaLibraryRemoveError = 'helpers.mediaLibrary.remove.error',
   /**
+   * The "{0}" file still contains Git conflict markers. Resolve the conflict in the file to make Front Matter read it again.
+   */
+  helpersJsonDbHelperConflictError = 'helpers.jsonDbHelper.conflict.error',
+  /**
+   * The "{0}" file could not be read, as it does not contain valid JSON: {1}
+   */
+  helpersJsonDbHelperParseError = 'helpers.jsonDbHelper.parse.error',
+  /**
    * Couldn't open the file.
    */
   helpersOpenFileInEditorError = 'helpers.openFileInEditor.error',

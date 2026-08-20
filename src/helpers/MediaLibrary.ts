@@ -1,6 +1,7 @@
 import { MediaHelpers } from './MediaHelpers';
 import { Disposable, workspace } from 'vscode';
-import { Config, JsonDB } from 'node-json-db';
+import { JsonDB } from 'node-json-db';
+import { createJsonDb } from './JsonDbHelper';
 import { basename, dirname, join, parse } from 'path';
 import { Folders, WORKSPACE_PLACEHOLDER } from '../commands/Folders';
 import { Notifications } from './Notifications';
@@ -56,19 +57,7 @@ export class MediaLibrary {
       }
     }
 
-    this.db = new JsonDB(
-      new Config(
-        join(
-          parseWinPath(wsFolder?.fsPath || ''),
-          LocalStore.rootFolder,
-          LocalStore.databaseFolder,
-          LocalStore.mediaDatabaseFile
-        ),
-        true,
-        false,
-        '/'
-      )
-    );
+    this.db = createJsonDb(dbPath);
 
     if (this.renameFilesListener) {
       this.renameFilesListener.dispose();

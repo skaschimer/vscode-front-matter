@@ -6,11 +6,13 @@
 
 - [#1053](https://github.com/estruyf/vscode-front-matter/issues/1053): Support pasting images directly into Markdown/MDX files
 - [#1055](https://github.com/estruyf/vscode-front-matter/issues/1055): Added the `translate` property on content type fields to define which front matter fields need to be machine translated. The title and description fields are translated by default, set `translate: false` to exclude them
+- The `.frontmatter/database` files are now stored in a human readable format with sorted keys, so that Git can merge them line by line instead of conflicting on a single line. Existing files are reformatted once, when the extension activates
 
 ### 🐞 Fixes
 
 - [#1043](https://github.com/estruyf/vscode-front-matter/issues/1043): Fix issue with last modified date in content health freshness checks
 - [#1054](https://github.com/estruyf/vscode-front-matter/issues/1054): Fix the "Could not retrieve the locale for the current file" error for multilingual content nested in subfolders (ex. `content/de/posts/2024/07/my-post/index.md`). Translations are now created with the same folder structure as the source file
+- Show an error notification when one of the `.frontmatter/database` files contains invalid JSON or unresolved Git conflict markers, instead of failing silently
 
 ## [10.11.0] - 2026-07-02 - [Release notes](https://beta.frontmatter.codes/updates/v10.11.0)
 

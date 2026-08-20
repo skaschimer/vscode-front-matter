@@ -10,6 +10,7 @@ export * from './FilesHelper';
 export * from './FrameworkDetector';
 export * from './GroupBy';
 export * from './ImageHelper';
+export * from './JsonDbHelper';
 export * from './Logger';
 export * from './MediaHelpers';
 export * from './MediaLibrary';

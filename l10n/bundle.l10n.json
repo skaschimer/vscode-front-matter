@@ -763,6 +763,8 @@
 
   "helpers.mediaLibrary.remove.warning": "The name \"{0}\" already exists at the file location.",
   "helpers.mediaLibrary.remove.error": "Sorry, something went wrong updating \"{0}\" to \"{1}\".",
+  "helpers.jsonDbHelper.conflict.error": "The \"{0}\" file still contains Git conflict markers. Resolve the conflict in the file to make Front Matter read it again.",
+  "helpers.jsonDbHelper.parse.error": "The \"{0}\" file could not be read, as it does not contain valid JSON: {1}",
 
   "helpers.openFileInEditor.error": "Couldn't open the file.",
 
