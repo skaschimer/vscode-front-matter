@@ -1,6 +1,6 @@
 # Change Log
 
-## [10.12.0] - 2026-xx-xx - [Release notes](https://beta.frontmatter.codes/updates/v10.12.0)
+## [10.12.0] - 2026-08-21 - [Release notes](https://beta.frontmatter.codes/updates/v10.12.0)
 
 ### 🎨 Enhancements
 
