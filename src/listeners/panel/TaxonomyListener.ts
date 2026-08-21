@@ -10,7 +10,7 @@ import { SettingsListener as PanelSettingsListener } from '.';
 import { SettingsListener as DashboardSettingsListener } from '../dashboard';
 import { SponsorAi } from '../../services/SponsorAI';
 import { PanelProvider } from '../../panelWebView/PanelProvider';
-import { MessageHandlerData } from '@estruyf/vscode';
+import type { MessageHandlerData } from '@estruyf/vscode';
 import * as l10n from '@vscode/l10n';
 import { LocalizationKey } from '../../localization';
 import { Copilot } from '../../services/Copilot';

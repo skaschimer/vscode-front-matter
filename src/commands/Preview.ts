@@ -23,7 +23,7 @@ import {
 } from '../helpers';
 import { ContentFolder, ContentType, PreviewSettings } from '../models';
 import { Article } from '.';
-import { WebviewHelper } from '@estruyf/vscode';
+import { WebviewHelper } from '@estruyf/vscode/dist/webview/WebviewHelper';
 import { Folders } from './Folders';
 import { ParsedFrontMatter } from '../parsers';
 import { getLocalizationFile } from '../utils/getLocalizationFile';

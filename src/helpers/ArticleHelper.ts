@@ -41,7 +41,7 @@ import { format, parse } from 'date-fns';
 import { Notifications } from './Notifications';
 import { Article } from '../commands';
 import { dirname, join, parse as parseFile } from 'path';
-import { EditorHelper } from '@estruyf/vscode';
+import { EditorHelper } from '@estruyf/vscode/dist/editor/EditorHelper';
 import sanitize from '../helpers/Sanitize';
 import { ContentFolder, Field, ContentType as IContentType } from '../models';
 import { DiagnosticSeverity, Position, window, Range } from 'vscode';

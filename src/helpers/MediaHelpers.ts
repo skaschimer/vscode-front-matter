@@ -23,7 +23,7 @@ import { basename, join, parse, dirname, relative } from 'path';
 import { statSync } from 'fs';
 import { Uri, workspace, window, Position } from 'vscode';
 import imageSize from 'image-size';
-import { EditorHelper } from '@estruyf/vscode';
+import { EditorHelper } from '@estruyf/vscode/dist/editor/EditorHelper';
 import { SortOption } from '../dashboardWebView/constants/SortOption';
 import { DataListener, MediaListener } from '../listeners/panel';
 import { MediaListener as DashboardMediaListener } from '../listeners/dashboard';

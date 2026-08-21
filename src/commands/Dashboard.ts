@@ -10,7 +10,7 @@ import { commands, Uri, ViewColumn, Webview, WebviewPanel, window } from 'vscode
 import { DashboardSettings, Logger, Settings as SettingsHelper, Telemetry } from '../helpers';
 import { DashboardCommand } from '../dashboardWebView/DashboardCommand';
 import { Extension } from '../helpers/Extension';
-import { WebviewHelper } from '@estruyf/vscode';
+import { WebviewHelper } from '@estruyf/vscode/dist/webview/WebviewHelper';
 import { DashboardData } from '../models/DashboardData';
 import {
   DashboardListener,

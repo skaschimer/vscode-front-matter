@@ -1,4 +1,4 @@
-import { EditorHelper } from '@estruyf/vscode';
+import { EditorHelper } from '@estruyf/vscode/dist/editor/EditorHelper';
 import { window, Range, Position } from 'vscode';
 import { Dashboard } from '../../commands/Dashboard';
 import { SETTING_CONTENT_SNIPPETS, SETTING_DATE_FORMAT } from '../../constants';

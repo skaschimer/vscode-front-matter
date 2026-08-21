@@ -45,7 +45,7 @@ import {
 } from '../../models';
 import { encodeEmoji, fieldWhenClause, getTitleField } from '../../utils';
 import { PanelProvider } from '../../panelWebView/PanelProvider';
-import { MessageHandlerData } from '@estruyf/vscode';
+import type { MessageHandlerData } from '@estruyf/vscode';
 import { SponsorAi } from '../../services/SponsorAI';
 import { Terminal } from '../../services';
 import * as l10n from '@vscode/l10n';
