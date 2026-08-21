@@ -18,8 +18,15 @@ import {
   openFileInEditor,
   parseWinPath
 } from '../helpers';
-import { COMMAND_NAME, SETTING_CONTENT_I18N } from '../constants';
-import { ContentFolder, Field, I18nConfig, ContentType as IContentType } from '../models';
+import { COMMAND_NAME, SETTING_CONTENT_I18N, SETTING_TAXONOMY_FIELD_GROUPS } from '../constants';
+import {
+  ContentFolder,
+  Field,
+  FieldGroup,
+  FieldType,
+  I18nConfig,
+  ContentType as IContentType
+} from '../models';
 import { join, parse } from 'path';
 import { existsAsync, getDescriptionField, getTitleField } from '../utils';
 import { Folders } from '.';
@@ -28,10 +35,37 @@ import { PagesListener } from '../listeners/dashboard';
 import { LocalizationKey, localize } from '../localization';
 import { Translations } from '../services/Translations';
 
+/**
+ * Reference to a value which needs to be translated.
+ */
+interface TranslationValue {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  container: any;
+  key: string | number;
+}
+
 export class i18n {
   private static processedFiles: {
     [filePath: string]: { dir: string; filename: string; isPageBundle: boolean };
   } = {};
+
+  /**
+   * The field types which hold values that should never be machine translated.
+   */
+  private static readonly nonTranslatableFieldTypes: FieldType[] = [
+    'boolean',
+    'choice',
+    'contentRelationship',
+    'dataFile',
+    'datetime',
+    'divider',
+    'draft',
+    'file',
+    'heading',
+    'image',
+    'json',
+    'number'
+  ];
 
   /**
    * Registers the i18n commands.
@@ -133,21 +167,14 @@ export class i18n {
       return false;
     }
 
-    const fileInfo = await i18n.getFileInfo(filePath);
-
     if (pageFolder.path) {
       if (pageFolder.locale) {
         return pageFolder.locale === pageFolder.defaultLocale;
       }
 
-      let pageFolderPath = parseWinPath(pageFolder.path);
-      if (!pageFolderPath.endsWith('/')) {
-        pageFolderPath += '/';
-      }
-
-      return (
-        parseWinPath(fileInfo.dir).toLowerCase() === parseWinPath(pageFolderPath).toLowerCase()
-      );
+      // The content can be nested within the locale folder, that is why it only checks
+      // if the file is located in the folder instead of comparing the directories.
+      return typeof i18n.getRelativeFilePath(filePath, pageFolder.path) !== 'undefined';
     }
 
     return false;
@@ -166,20 +193,11 @@ export class i18n {
 
     let pageFolder = await Folders.getPageFolderByFilePath(filePath);
 
-    const fileInfo = await i18n.getFileInfo(filePath);
-
-    if (pageFolder && pageFolder.defaultLocale) {
-      let pageFolderPath = parseWinPath(pageFolder.path);
-      if (!pageFolderPath.endsWith('/')) {
-        pageFolderPath += '/';
-      }
-
-      if (
-        pageFolder.path &&
-        pageFolder.locale &&
-        parseWinPath(fileInfo.dir).toLowerCase() === parseWinPath(pageFolderPath).toLowerCase()
-      ) {
-        return i18nSettings.find((i18n) => i18n.locale === pageFolder?.locale);
+    if (pageFolder && pageFolder.defaultLocale && pageFolder.path && pageFolder.locale) {
+      // The content can be nested within the locale folder (ex. `content/de/posts/2024/07/my-post/index.md`),
+      // that is why it only checks if the file is located in the locale folder.
+      if (typeof i18n.getRelativeFilePath(filePath, pageFolder.path) !== 'undefined') {
+        return i18nSettings.find((setting) => setting.locale === pageFolder?.locale);
       }
     }
 
@@ -188,12 +206,16 @@ export class i18n {
       return;
     }
 
-    for (const locale of i18nSettings) {
-      if (locale.path && pageFolder.defaultLocale !== locale.locale) {
-        const translation = join(pageFolder.path, locale.path, fileInfo.filename);
-        if (parseWinPath(translation).toLowerCase() === parseWinPath(filePath).toLowerCase()) {
-          return locale;
-        }
+    // Check in which locale folder the file is located
+    const sourcePath = pageFolder.localeSourcePath || pageFolder.path;
+    const locales = i18nSettings
+      .filter((setting) => setting.path && pageFolder?.defaultLocale !== setting.locale)
+      .sort((a, b) => (b.path as string).length - (a.path as string).length);
+
+    for (const locale of locales) {
+      const localePath = join(sourcePath, locale.path as string);
+      if (typeof i18n.getRelativeFilePath(filePath, localePath) !== 'undefined') {
+        return locale;
       }
     }
 
@@ -227,14 +249,15 @@ export class i18n {
     } = {};
 
     let pageFolder = await Folders.getPageFolderByFilePath(filePath);
-    const fileInfo = await i18n.getFileInfo(filePath);
 
     if (pageFolder && pageFolder.defaultLocale && pageFolder.localeSourcePath) {
-      for (const i18n of i18nSettings) {
-        const translation = join(pageFolder.localeSourcePath, i18n.path || '', fileInfo.filename);
+      const relFilePath = await i18n.getLocaleRelativeFilePath(filePath, pageFolder);
+
+      for (const setting of i18nSettings) {
+        const translation = join(pageFolder.localeSourcePath, setting.path || '', relFilePath);
         if (await existsAsync(translation)) {
-          translations[i18n.locale] = {
-            locale: i18n,
+          translations[setting.locale] = {
+            locale: setting,
             path: translation
           };
         }
@@ -247,11 +270,14 @@ export class i18n {
       return translations;
     }
 
-    for (const i18n of i18nSettings) {
-      const translation = join(pageFolder.path, i18n.path || '', fileInfo.filename);
+    const relFilePath = await i18n.getLocaleRelativeFilePath(filePath, pageFolder);
+    const sourcePath = pageFolder.localeSourcePath || pageFolder.path;
+
+    for (const setting of i18nSettings) {
+      const translation = join(sourcePath, setting.path || '', relFilePath);
       if (await existsAsync(translation)) {
-        translations[i18n.locale] = {
-          locale: i18n,
+        translations[setting.locale] = {
+          locale: setting,
           path: translation
         };
       }
@@ -346,18 +372,11 @@ export class i18n {
       return;
     }
 
-    // Get the directory of the file
+    // Get the directory of the file relative to its locale folder
     const fileInfo = parse(fileUri.fsPath);
-    let dir = fileInfo.dir;
-    let pageBundleDir = '';
+    const contentDir = await i18n.getLocaleRelativeDir(fileUri.fsPath, pageFolder);
 
-    if (await ArticleHelper.isPageBundle(fileUri.fsPath)) {
-      dir = ArticleHelper.getPageFolderFromBundlePath(fileUri.fsPath);
-      pageBundleDir = fileUri.fsPath.replace(dir, '');
-      pageBundleDir = join(parse(pageBundleDir).dir);
-    }
-
-    const i18nDir = join(pageFolder.localeSourcePath, targetLocale.path, pageBundleDir);
+    const i18nDir = join(pageFolder.localeSourcePath, targetLocale.path, contentDir);
 
     if (!(await existsAsync(i18nDir))) {
       await workspace.fs.createDirectory(Uri.file(i18nDir));
@@ -379,7 +398,7 @@ export class i18n {
     }
 
     if (sourceLocale?.locale) {
-      article = await i18n.translate(article, sourceLocale, targetLocale);
+      article = await i18n.translate(article, contentType, sourceLocale, targetLocale);
     }
 
     const newFileUri = Uri.file(newFilePath);
@@ -452,12 +471,7 @@ export class i18n {
 
     // Determine translation file paths
     const fileInfo = parse(fileUri.fsPath);
-    let pageBundleDir = '';
-    if (await ArticleHelper.isPageBundle(fileUri.fsPath)) {
-      const dir = ArticleHelper.getPageFolderFromBundlePath(fileUri.fsPath);
-      pageBundleDir = fileUri.fsPath.replace(dir, '');
-      pageBundleDir = join(parse(pageBundleDir).dir);
-    }
+    const contentDir = await i18n.getLocaleRelativeDir(fileUri.fsPath, pageFolder);
 
     // Gather target locales & metadata
     const translations = (await i18n.getTranslations(fileUri.fsPath)) || {};
@@ -468,14 +482,9 @@ export class i18n {
       .map((i18n) => {
         return {
           ...i18n,
-          dir: join(pageFolder.localeSourcePath!, i18n.path!, pageBundleDir),
-          absolutePath: join(
-            pageFolder.localeSourcePath!,
-            i18n.path!,
-            pageBundleDir,
-            fileInfo.base
-          ),
-          relativePath: join(i18n.path!, pageBundleDir, fileInfo.base)
+          dir: join(pageFolder.localeSourcePath!, i18n.path!, contentDir),
+          absolutePath: join(pageFolder.localeSourcePath!, i18n.path!, contentDir, fileInfo.base),
+          relativePath: join(i18n.path!, contentDir, fileInfo.base)
         };
       })
       .sort((a, b) => (a.title || a.locale).localeCompare(b.title || b.locale));
@@ -560,7 +569,7 @@ export class i18n {
       targetLocale.dir
     );
     if (sourceLocale?.locale) {
-      article = await i18n.translate(article, sourceLocale, targetLocale);
+      article = await i18n.translate(article, contentType, sourceLocale, targetLocale);
     }
 
     const newFileUri = Uri.file(targetLocale.absolutePath);
@@ -584,12 +593,14 @@ export class i18n {
   /**
    * Translates the given article from the source locale to the target locale using DeepL translation service.
    * @param article - The article to be translated.
+   * @param contentType - The content type of the article.
    * @param sourceLocale - The source locale configuration.
    * @param targetLocale - The target locale configuration.
    * @returns A promise that resolves to the translated article.
    */
   private static async translate(
     article: ParsedFrontMatter,
+    contentType: IContentType,
     sourceLocale: I18nConfig,
     targetLocale: I18nConfig
   ) {
@@ -602,28 +613,26 @@ export class i18n {
         },
         async () => {
           try {
-            const titleField = getTitleField();
-            const descriptionField = getDescriptionField();
-
-            const title = article.data[titleField] || '';
-            const description = article.data[descriptionField] || '';
-            const content = article.content || '';
-
-            const text = [title, description, content];
-            const translations = await Translations.translate(
-              text,
-              sourceLocale.locale,
-              targetLocale.locale
-            );
-
-            if (!translations || translations.length < 3) {
+            const values = i18n.getValuesToTranslate(article, contentType);
+            if (values.length === 0) {
               resolve(article);
               return;
             }
 
-            article.data[titleField] = article.data[titleField] ? translations[0] : '';
-            article.data[descriptionField] = article.data[descriptionField] ? translations[1] : '';
-            article.content = article.content ? translations[2] : '';
+            const translations = await Translations.translate(
+              values.map((value) => value.container[value.key] as string),
+              sourceLocale.locale,
+              targetLocale.locale
+            );
+
+            if (!translations || translations.length !== values.length) {
+              resolve(article);
+              return;
+            }
+
+            for (let i = 0; i < values.length; i++) {
+              values[i].container[values[i].key] = translations[i];
+            }
           } catch (error) {
             Notifications.error(`${(error as Error).message}`);
           }
@@ -632,6 +641,158 @@ export class i18n {
         }
       );
     });
+  }
+
+  /**
+   * Retrieves all the values of the article which need to be translated.
+   *
+   * The title and description fields are translated by default, unless the field is
+   * defined with `translate: false`. All other fields require `translate: true` to be
+   * taken into account.
+   *
+   * @param article - The parsed front matter of the article.
+   * @param contentType - The content type of the article.
+   * @returns The references to the values which need to be translated.
+   */
+  private static getValuesToTranslate(
+    article: ParsedFrontMatter,
+    contentType: IContentType
+  ): TranslationValue[] {
+    const values: TranslationValue[] = [];
+
+    // The title and description fields are translated by default
+    const defaultFields = [getTitleField(), getDescriptionField()];
+    for (const fieldName of defaultFields) {
+      const field = ContentType.findFieldByName(contentType.fields, fieldName);
+      if (field && field.translate === false) {
+        continue;
+      }
+
+      i18n.addValueToTranslate(article.data, fieldName, values);
+    }
+
+    i18n.getFieldValuesToTranslate(contentType.fields, article.data, values);
+
+    // The content of the article is always translated
+    i18n.addValueToTranslate(article, 'content', values);
+
+    return values;
+  }
+
+  /**
+   * Retrieves the values of the fields which are marked to be translated.
+   *
+   * @param fields - The fields to check.
+   * @param data - The data object which holds the field values.
+   * @param values - The references to the values which need to be translated.
+   */
+  private static getFieldValuesToTranslate(
+    fields: Field[],
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    data: { [key: string]: any } | undefined,
+    values: TranslationValue[]
+  ): void {
+    if (!fields || !data) {
+      return;
+    }
+
+    for (const field of fields) {
+      const value = data[field.name];
+
+      if (field.type === 'fields' && field.fields) {
+        if (value && typeof value === 'object' && !Array.isArray(value)) {
+          i18n.getFieldValuesToTranslate(field.fields, value, values);
+        }
+        continue;
+      }
+
+      if (field.type === 'block') {
+        i18n.getBlockValuesToTranslate(field, value, values);
+        continue;
+      }
+
+      if (!field.translate || i18n.nonTranslatableFieldTypes.includes(field.type)) {
+        continue;
+      }
+
+      if (Array.isArray(value)) {
+        for (let i = 0; i < value.length; i++) {
+          i18n.addValueToTranslate(value, i, values);
+        }
+      } else {
+        i18n.addValueToTranslate(data, field.name, values);
+      }
+    }
+  }
+
+  /**
+   * Retrieves the values to translate from the items of a block field.
+   *
+   * @param field - The block field.
+   * @param value - The value of the block field.
+   * @param values - The references to the values which need to be translated.
+   */
+  private static getBlockValuesToTranslate(
+    field: Field,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    value: any,
+    values: TranslationValue[]
+  ): void {
+    if (!Array.isArray(value)) {
+      return;
+    }
+
+    const fieldGroups = Settings.get<FieldGroup[]>(SETTING_TAXONOMY_FIELD_GROUPS);
+    if (!fieldGroups) {
+      return;
+    }
+
+    const groupIds = Array.isArray(field.fieldGroup)
+      ? field.fieldGroup
+      : field.fieldGroup
+      ? [field.fieldGroup]
+      : [];
+
+    for (const item of value) {
+      if (!item || typeof item !== 'object') {
+        continue;
+      }
+
+      // When the block only allows a single group, the item doesn't need to define it
+      const groupId = item.fieldGroup || (groupIds.length === 1 ? groupIds[0] : undefined);
+      const group = fieldGroups.find((group) => group.id === groupId);
+      if (!group || !group.fields) {
+        continue;
+      }
+
+      i18n.getFieldValuesToTranslate(group.fields, item, values);
+    }
+  }
+
+  /**
+   * Adds the reference to the value to translate, when the value is a non-empty string
+   * and it hasn't been added yet.
+   *
+   * @param container - The object or array which holds the value.
+   * @param key - The key or index of the value.
+   * @param values - The references to the values which need to be translated.
+   */
+  private static addValueToTranslate(
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    container: any,
+    key: string | number,
+    values: TranslationValue[]
+  ): void {
+    const value = container[key];
+    if (typeof value !== 'string' || !value) {
+      return;
+    }
+
+    if (values.some((value) => value.container === container && value.key === key)) {
+      return;
+    }
+
+    values.push({ container, key });
   }
 
   /**
@@ -669,6 +830,71 @@ export class i18n {
   }
 
   /**
+   * Retrieves the path of the file relative to the given folder.
+   *
+   * @param filePath - The path of the file.
+   * @param folderPath - The path of the folder.
+   * @returns The relative path of the file, or `undefined` when the file is not located in the folder.
+   */
+  private static getRelativeFilePath(filePath: string, folderPath?: string): string | undefined {
+    if (!filePath || !folderPath) {
+      return;
+    }
+
+    let parsedFolderPath = parseWinPath(folderPath);
+    if (!parsedFolderPath.endsWith('/')) {
+      parsedFolderPath += '/';
+    }
+
+    const parsedFilePath = parseWinPath(filePath);
+    if (!parsedFilePath.toLowerCase().startsWith(parsedFolderPath.toLowerCase())) {
+      return;
+    }
+
+    return parsedFilePath.substring(parsedFolderPath.length);
+  }
+
+  /**
+   * Retrieves the path of the file relative to its locale folder.
+   *
+   * The content can be nested within the locale folder, the whole folder structure is kept
+   * (ex. `posts/2024/07/my-post/index.md`) so that translations use the same structure.
+   *
+   * @param filePath - The path of the file.
+   * @param pageFolder - The content folder of the file.
+   * @returns The relative path of the file.
+   */
+  private static async getLocaleRelativeFilePath(
+    filePath: string,
+    pageFolder: ContentFolder
+  ): Promise<string> {
+    const relFilePath = i18n.getRelativeFilePath(filePath, pageFolder.path);
+    if (typeof relFilePath !== 'undefined') {
+      return relFilePath;
+    }
+
+    const fileInfo = await i18n.getFileInfo(filePath);
+    return fileInfo.filename;
+  }
+
+  /**
+   * Retrieves the directory of the file relative to its locale folder.
+   *
+   * @param filePath - The path of the file.
+   * @param pageFolder - The content folder of the file.
+   * @returns The relative directory of the file, or an empty string when the file is located in the root of the locale folder.
+   */
+  private static async getLocaleRelativeDir(
+    filePath: string,
+    pageFolder: ContentFolder
+  ): Promise<string> {
+    const relFilePath = await i18n.getLocaleRelativeFilePath(filePath, pageFolder);
+    const relDir = parse(relFilePath).dir;
+
+    return relDir ? join(relDir) : '';
+  }
+
+  /**
    * Retrieves the page folder for a given file path.
    *
    * @param filePath - The path of the file.
@@ -680,6 +906,16 @@ export class i18n {
     const localeFolders = folders?.filter((folder) => folder.defaultLocale);
     if (!localeFolders) {
       return;
+    }
+
+    // Check in which locale folder the file is located, the deepest folder wins
+    const sortedFolders = [...localeFolders].sort(
+      (a, b) => (b.path || '').length - (a.path || '').length
+    );
+    for (const folder of sortedFolders) {
+      if (typeof i18n.getRelativeFilePath(filePath, folder.path) !== 'undefined') {
+        return folder;
+      }
     }
 
     const fileInfo = await i18n.getFileInfo(filePath);

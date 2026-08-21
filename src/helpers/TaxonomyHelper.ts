@@ -17,7 +17,8 @@ import { Notifications } from './Notifications';
 import { ArticleHelper } from './ArticleHelper';
 import { ContentType } from './ContentType';
 import { readFileAsync, writeFileAsync } from '../utils';
-import { Config, JsonDB } from 'node-json-db';
+import { JsonDB } from 'node-json-db';
+import { createJsonDb } from './JsonDbHelper';
 import { Folders } from '../commands';
 import { join } from 'path';
 import { SettingsListener as PanelSettingsListener } from '../listeners/panel';
@@ -47,7 +48,7 @@ export class TaxonomyHelper {
     );
     const dbPath = join(dbFolder, LocalStore.taxonomyDatabaseFile);
 
-    TaxonomyHelper.db = new JsonDB(new Config(dbPath, true, false, '/'));
+    TaxonomyHelper.db = createJsonDb(dbPath);
   }
 
   /**

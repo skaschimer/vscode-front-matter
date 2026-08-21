@@ -3,6 +3,17 @@ import { Extension } from '../helpers';
 
 export class Translations {
   /**
+   * The maximum number of texts which can be sent in a single request.
+   * DeepL allows 50 text parameters, Azure allows 1000 array elements.
+   */
+  private static readonly maxBatchSize = 40;
+  /**
+   * The maximum number of characters which can be sent in a single request.
+   * Azure allows 50.000 characters per request.
+   */
+  private static readonly maxBatchLength = 40000;
+
+  /**
    * Translates an array of text from a source language to a target language.
    * @param text - The array of text to be translated.
    * @param source - The source language code.
@@ -24,15 +35,66 @@ export class Translations {
       ExtensionState.Secrets.Azure.TranslatorRegion
     );
 
-    if (azureAuthKey && azureRegion) {
-      return this.translateAzure(text, source, target, azureAuthKey, azureRegion);
+    if (!text || text.length === 0) {
+      return [];
     }
 
-    if (deeplAuthKey) {
-      return this.translateDeepL(text, source, target, deeplAuthKey);
+    const translations: string[] = [];
+
+    for (const batch of Translations.createBatches(text)) {
+      let translated: string[] | undefined;
+
+      if (azureAuthKey && azureRegion) {
+        translated = await this.translateAzure(batch, source, target, azureAuthKey, azureRegion);
+      } else if (deeplAuthKey) {
+        translated = await this.translateDeepL(batch, source, target, deeplAuthKey);
+      } else {
+        return;
+      }
+
+      if (!translated || translated.length !== batch.length) {
+        throw new Error('Invalid response');
+      }
+
+      translations.push(...translated);
     }
 
-    return;
+    return translations;
+  }
+
+  /**
+   * Splits the texts into batches which stay within the limits of the translation services.
+   * @param text - The array of text to be translated.
+   * @returns An array of batches.
+   */
+  private static createBatches(text: string[]): string[][] {
+    const batches: string[][] = [];
+
+    let batch: string[] = [];
+    let batchLength = 0;
+
+    for (const value of text) {
+      const valueLength = value?.length || 0;
+
+      if (
+        batch.length > 0 &&
+        (batch.length >= Translations.maxBatchSize ||
+          batchLength + valueLength > Translations.maxBatchLength)
+      ) {
+        batches.push(batch);
+        batch = [];
+        batchLength = 0;
+      }
+
+      batch.push(value);
+      batchLength += valueLength;
+    }
+
+    if (batch.length > 0) {
+      batches.push(batch);
+    }
+
+    return batches;
   }
 
   /**
@@ -120,7 +182,7 @@ export class Translations {
       }
 
       const data = await response.json();
-      if (!data.translations || data.translations.length < 3) {
+      if (!data.translations) {
         throw new Error('Invalid response');
       }
 

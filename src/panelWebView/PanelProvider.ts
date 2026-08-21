@@ -24,7 +24,7 @@ import {
 import { ArticleHelper, Logger, Settings } from '../helpers';
 import { Command } from '../panelWebView/Command';
 import { TagType } from '../panelWebView/TagType';
-import { WebviewHelper } from '@estruyf/vscode';
+import { WebviewHelper } from '@estruyf/vscode/dist/webview/WebviewHelper';
 import { Extension } from '../helpers/Extension';
 import { Telemetry } from '../helpers/Telemetry';
 import { GitListener, ModeListener } from '../listeners/general';

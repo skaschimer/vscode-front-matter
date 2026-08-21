@@ -26,6 +26,7 @@ import {
 import { ContentFolder, TaxonomyType } from '../models';
 import { Notifications } from './Notifications';
 import { Settings } from './SettingsHelper';
+import { reformatJsonDbs } from './JsonDbHelper';
 import { TaxonomyHelper } from './TaxonomyHelper';
 import { Cache } from '../commands/Cache';
 import * as l10n from '@vscode/l10n';
@@ -268,6 +269,9 @@ export class Extension {
         });
       await Settings.safeUpdate(SETTING_CONTENT_PAGE_FOLDERS, folders, true);
     }
+
+    // Rewrite the databases which are still stored on a single line
+    await reformatJsonDbs();
 
     // The tags and categories settings need to be moved to the database
     const tags = Settings.get<string[]>(SETTING_TAXONOMY_TAGS) || [];

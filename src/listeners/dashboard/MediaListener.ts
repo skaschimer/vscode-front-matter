@@ -7,8 +7,12 @@ import { commands, env, ProgressLocation, Uri, window, workspace } from 'vscode'
 import { COMMAND_NAME } from '../../constants';
 import * as os from 'os';
 import { Folders } from '../../commands';
-import { PostMessageData, UnmappedMedia } from '../../models';
-import { FilesHelper, MediaLibrary } from '../../helpers';
+import { MediaInfo, PostMessageData, UnmappedMedia } from '../../models';
+import { decodeBase64, FilesHelper, MediaLibrary } from '../../helpers';
+import { Dashboard } from '../../commands/Dashboard';
+import { lookup } from 'mime-types';
+import imageSize from 'image-size';
+import { ISizeCalculationResult } from 'image-size/dist/types/interface';
 import { existsAsync, flattenObjectKeys } from '../../utils';
 import { join, parse } from 'path';
 import { LocalizationKey, localize } from '../../localization';
@@ -31,6 +35,9 @@ export class MediaListener extends BaseListener {
         break;
       case DashboardMessage.uploadMedia:
         this.store(msg?.payload);
+        break;
+      case DashboardMessage.uploadPastedMedia:
+        await this.storePastedMedia(msg);
         break;
       case DashboardMessage.deleteMedia:
         this.delete(msg?.payload);
@@ -260,6 +267,62 @@ export class MediaListener extends BaseListener {
     } catch {
       // Do nothing
     }
+  }
+
+  /**
+   * Store a pasted media file in the selected folder and report the stored file
+   * back to the dashboard so it can collect the metadata and insert it.
+   * @param msg
+   */
+  private static async storePastedMedia({ command, payload, requestId }: PostMessageData) {
+    if (!command || !requestId) {
+      return;
+    }
+
+    const { fileName, contents, folder } = payload ?? {};
+    if (!fileName || !contents || !folder) {
+      this.sendError(command as DashboardCommand, requestId, 'Missing paste information');
+      return;
+    }
+
+    const data = decodeBase64(contents);
+    if (!data) {
+      this.sendError(command as DashboardCommand, requestId, 'Invalid media contents');
+      return;
+    }
+
+    let fsPath: string | undefined;
+    try {
+      fsPath = await MediaHelpers.saveMediaBuffer(fileName, data.data, folder);
+    } catch (e) {
+      fsPath = undefined;
+    }
+
+    if (!fsPath) {
+      this.sendError(command as DashboardCommand, requestId, 'Could not store the media');
+      return;
+    }
+
+    const mimeType = lookup(fsPath) || undefined;
+
+    let dimensions: ISizeCalculationResult | undefined;
+    try {
+      dimensions = mimeType?.startsWith('image/') ? imageSize(fsPath) : undefined;
+    } catch {
+      dimensions = undefined;
+    }
+
+    MediaHelpers.resetMedia();
+    this.sendRequest(command as DashboardCommand, requestId, {
+      filename: parse(fsPath).base,
+      fsPath,
+      vsPath: Dashboard.getWebview()?.asWebviewUri(Uri.file(fsPath))?.toString(),
+      dimensions,
+      mimeType,
+      metadata: {}
+    } as MediaInfo);
+
+    this.sendMediaFiles(0, folder);
   }
 
   /**

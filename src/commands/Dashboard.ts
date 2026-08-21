@@ -10,7 +10,7 @@ import { commands, Uri, ViewColumn, Webview, WebviewPanel, window } from 'vscode
 import { DashboardSettings, Logger, Settings as SettingsHelper, Telemetry } from '../helpers';
 import { DashboardCommand } from '../dashboardWebView/DashboardCommand';
 import { Extension } from '../helpers/Extension';
-import { WebviewHelper } from '@estruyf/vscode';
+import { WebviewHelper } from '@estruyf/vscode/dist/webview/WebviewHelper';
 import { DashboardData } from '../models/DashboardData';
 import {
   DashboardListener,
@@ -302,7 +302,7 @@ export class Dashboard {
       `default-src 'none';`,
       `img-src ${`vscode-file://vscode-app`} ${
         webView.cspSource
-      } https://api.visitorbadge.io 'self' 'unsafe-inline' https://*`,
+      } https://api.visitorbadge.io 'self' 'unsafe-inline' https://* data:`,
       `media-src ${`vscode-file://vscode-app`} ${
         webView.cspSource
       } 'self' 'unsafe-inline' https://*`,

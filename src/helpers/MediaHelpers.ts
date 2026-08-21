@@ -23,7 +23,7 @@ import { basename, join, parse, dirname, relative } from 'path';
 import { statSync } from 'fs';
 import { Uri, workspace, window, Position } from 'vscode';
 import imageSize from 'image-size';
-import { EditorHelper } from '@estruyf/vscode';
+import { EditorHelper } from '@estruyf/vscode/dist/editor/EditorHelper';
 import { SortOption } from '../dashboardWebView/constants/SortOption';
 import { DataListener, MediaListener } from '../listeners/panel';
 import { MediaListener as DashboardMediaListener } from '../listeners/dashboard';
@@ -350,6 +350,36 @@ export class MediaHelpers {
     }
 
     return false;
+  }
+
+  /**
+   * Write raw media contents to disk, making sure the file name is unique
+   * @param fileName File name including its extension
+   * @param contents The raw file contents
+   * @param absFolderPath The absolute path of the folder to store the file in
+   * @returns The absolute path of the stored file
+   */
+  public static async saveMediaBuffer(
+    fileName: string,
+    contents: Uint8Array,
+    absFolderPath: string
+  ): Promise<string | undefined> {
+    if (!(await existsAsync(absFolderPath))) {
+      await workspace.fs.createDirectory(Uri.file(absFolderPath));
+    }
+
+    const { name, ext } = parse(fileName);
+
+    let filePath = join(absFolderPath, fileName);
+    let idx = 1;
+    while (await existsAsync(filePath)) {
+      filePath = join(absFolderPath, `${name}-${idx}${ext}`);
+      idx++;
+    }
+
+    await writeFileAsync(filePath, contents);
+
+    return filePath;
   }
 
   /**

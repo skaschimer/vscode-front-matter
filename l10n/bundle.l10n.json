@@ -236,6 +236,18 @@
 
   "dashboard.media.dialog.title": "View details",
   "dashboard.media.panel.close": "Close panel",
+  "dashboard.media.paste.title": "Paste media",
+  "dashboard.media.paste.description": "Browse to the folder you want to store the image in.",
+  "dashboard.media.paste.storeIn": "Store in: {0}",
+  "dashboard.media.paste.noFolder": "Select a folder to store the image in.",
+  "dashboard.media.paste.store": "Store image",
+  "dashboard.media.paste.storing": "Storing the image...",
+  "dashboard.media.paste.error": "The image could not be stored. Please try again.",
+  "dashboard.media.paste.saveAndInsert": "Save and insert",
+  "dashboard.media.paste.snippetTitle": "Insert the image",
+  "dashboard.media.paste.snippetDescription": "Select how you want to insert the image into your content.",
+  "dashboard.media.paste.snippetNone": "Without snippet",
+
   "dashboard.media.metadata.panel.title": "Update metadata",
   "dashboard.media.metadata.panel.description": "Please specify the metadata you want to set for the file.",
   "dashboard.media.metadata.panel.field.fileName": "Filename",
@@ -751,6 +763,8 @@
 
   "helpers.mediaLibrary.remove.warning": "The name \"{0}\" already exists at the file location.",
   "helpers.mediaLibrary.remove.error": "Sorry, something went wrong updating \"{0}\" to \"{1}\".",
+  "helpers.jsonDbHelper.conflict.error": "The \"{0}\" file still contains Git conflict markers. Resolve the conflict in the file to make Front Matter read it again.",
+  "helpers.jsonDbHelper.parse.error": "The \"{0}\" file could not be read, as it does not contain valid JSON: {1}",
 
   "helpers.openFileInEditor.error": "Couldn't open the file.",
 
@@ -856,5 +870,8 @@
   "services.sponsorAi.getDescription.warning": "The AI description generation took too long. Please try again later.",
   "services.sponsorAi.getTaxonomySuggestions.warning": "The AI taxonomy generation took too long. Please try again later.",
 
-  "services.terminal.openLocalServerTerminal.terminalOption.message": "Starting local server"
+  "services.terminal.openLocalServerTerminal.terminalOption.message": "Starting local server",
+
+  "providers.mediaPaste.title": "Insert media with Front Matter",
+  "providers.mediaPaste.saveFailed": "Front Matter: the pasted media could not be stored in \"{0}\"."
 }

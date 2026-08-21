@@ -1,8 +1,7 @@
-import { Config, JsonDB } from 'node-json-db';
 import { Folders } from '../commands';
 import { join } from 'path';
 import { LocalStore } from '../constants';
-import { FilesHelper, parseWinPath } from '../helpers';
+import { createJsonDb, FilesHelper, parseWinPath } from '../helpers';
 
 const PINNED_DB = '/pinned';
 
@@ -106,6 +105,6 @@ export class PinnedItems {
     );
     const dbPath = join(dbFolder, LocalStore.pinnedItemsDatabaseFile);
 
-    return new JsonDB(new Config(dbPath, true, false, '/'));
+    return createJsonDb(dbPath);
   }
 }

@@ -772,6 +772,50 @@ export enum LocalizationKey {
    */
   dashboardMediaPanelClose = 'dashboard.media.panel.close',
   /**
+   * Paste media
+   */
+  dashboardMediaPasteTitle = 'dashboard.media.paste.title',
+  /**
+   * Browse to the folder you want to store the image in.
+   */
+  dashboardMediaPasteDescription = 'dashboard.media.paste.description',
+  /**
+   * Store in: {0}
+   */
+  dashboardMediaPasteStoreIn = 'dashboard.media.paste.storeIn',
+  /**
+   * Select a folder to store the image in.
+   */
+  dashboardMediaPasteNoFolder = 'dashboard.media.paste.noFolder',
+  /**
+   * Store image
+   */
+  dashboardMediaPasteStore = 'dashboard.media.paste.store',
+  /**
+   * Storing the image...
+   */
+  dashboardMediaPasteStoring = 'dashboard.media.paste.storing',
+  /**
+   * The image could not be stored. Please try again.
+   */
+  dashboardMediaPasteError = 'dashboard.media.paste.error',
+  /**
+   * Save and insert
+   */
+  dashboardMediaPasteSaveAndInsert = 'dashboard.media.paste.saveAndInsert',
+  /**
+   * Insert the image
+   */
+  dashboardMediaPasteSnippetTitle = 'dashboard.media.paste.snippetTitle',
+  /**
+   * Select how you want to insert the image into your content.
+   */
+  dashboardMediaPasteSnippetDescription = 'dashboard.media.paste.snippetDescription',
+  /**
+   * Without snippet
+   */
+  dashboardMediaPasteSnippetNone = 'dashboard.media.paste.snippetNone',
+  /**
    * Update metadata
    */
   dashboardMediaMetadataPanelTitle = 'dashboard.media.metadata.panel.title',
@@ -2493,6 +2537,14 @@ export enum LocalizationKey {
    */
   helpersMediaLibraryRemoveError = 'helpers.mediaLibrary.remove.error',
   /**
+   * The "{0}" file still contains Git conflict markers. Resolve the conflict in the file to make Front Matter read it again.
+   */
+  helpersJsonDbHelperConflictError = 'helpers.jsonDbHelper.conflict.error',
+  /**
+   * The "{0}" file could not be read, as it does not contain valid JSON: {1}
+   */
+  helpersJsonDbHelperParseError = 'helpers.jsonDbHelper.parse.error',
+  /**
    * Couldn't open the file.
    */
   helpersOpenFileInEditorError = 'helpers.openFileInEditor.error',
@@ -2851,5 +2903,13 @@ export enum LocalizationKey {
   /**
    * Starting local server
    */
-  servicesTerminalOpenLocalServerTerminalTerminalOptionMessage = 'services.terminal.openLocalServerTerminal.terminalOption.message'
+  servicesTerminalOpenLocalServerTerminalTerminalOptionMessage = 'services.terminal.openLocalServerTerminal.terminalOption.message',
+  /**
+   * Insert media with Front Matter
+   */
+  providersMediaPasteTitle = 'providers.mediaPaste.title',
+  /**
+   * Front Matter: the pasted media could not be stored in "{0}".
+   */
+  providersMediaPasteSaveFailed = 'providers.mediaPaste.saveFailed'
 }
